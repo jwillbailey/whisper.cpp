@@ -43,7 +43,7 @@ struct whisper_params {
     float logprob_thold = -1.00f;
 
     bool speed_up        = false;
-    bool debug_mode      = false;
+    bool debug_mode      = true;
     bool translate       = false;
     bool detect_language = false;
     bool diarize         = false;
@@ -64,7 +64,7 @@ struct whisper_params {
     bool print_progress  = false;
     bool no_timestamps   = false;
     bool log_score       = false;
-    bool use_gpu         = true;
+    bool use_gpu         = false;
 
     std::string language  = "en";
     std::string prompt;
