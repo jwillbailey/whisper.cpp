@@ -41,6 +41,8 @@
 #include <regex>
 #include <random>
 #include <functional>
+#include <windows.h>
+#include <iostream>
 
 #if defined(_MSC_VER)
 #pragma warning(disable: 4244 4267) // possible loss of data
@@ -3172,7 +3174,7 @@ struct whisper_context * whisper_init_from_file_with_params_no_state(const char 
 
     auto fin = std::ifstream(path_model, std::ios::binary);
     if (!fin) {
-        WHISPER_LOG_ERROR("%s: failed to open '%s'\n", __func__, path_model);
+        WHISPER_LOG_ERROR("%s: poop! failed to open '%s'\n", __func__, path_model);
         return nullptr;
     }
 
@@ -6629,4 +6631,10 @@ static void whisper_log_callback_default(ggml_log_level level, const char * text
     (void) user_data;
     fputs(text, stderr);
     fflush(stderr);
+}
+
+// Feature extraction
+
+std::vector<whisper_layer_encoder> & whisper_extract_encoder(struct whisper_context * ctx) {
+    return &(ctx->model->layers_decoder);
 }
