@@ -25,7 +25,6 @@
 #include "ggml-backend.h"
 
 #include <atomic>
-#include <algorithm>
 #include <cassert>
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -43,6 +42,8 @@
 #include <functional>
 #include <windows.h>
 #include <iostream>
+
+#include <algorithm>
 
 #if defined(_MSC_VER)
 #pragma warning(disable: 4244 4267) // possible loss of data
@@ -987,9 +988,8 @@ static void whisper_kv_cache_seq_rm(
                     whisper_pos   p0,
                     whisper_pos   p1) {
     uint32_t new_head = cache.size;
-
     if (p0 < 0) p0 = 0;
-    if (p1 < 0) p1 = std::numeric_limits<whisper_pos>::max();
+    if (p1 < 0) p1 = (std::numeric_limits<whisper_pos>::max)();
 
     for (uint32_t i = 0; i < cache.size; ++i) {
         if (cache.cells[i].pos >= p0 && cache.cells[i].pos < p1) {
@@ -1018,7 +1018,7 @@ static void whisper_kv_cache_seq_cp(
                     whisper_pos   p0,
                     whisper_pos   p1) {
     if (p0 < 0) p0 = 0;
-    if (p1 < 0) p1 = std::numeric_limits<whisper_pos>::max();
+    if (p1 < 0) p1 = (std::numeric_limits<whisper_pos>::max)();
 
     cache.head = 0;
 
@@ -2040,8 +2040,8 @@ static bool whisper_encode_internal(
             float * dst = wstate.inp_mel.data();
             memset(dst, 0, ggml_nbytes(mel));
 
-            const int i0 = std::min(mel_offset,           mel_inp.n_len);
-            const int i1 = std::min(mel_offset + 2*n_ctx, mel_inp.n_len);
+            const int i0 = (std::min)(mel_offset,           mel_inp.n_len);
+            const int i1 = (std::min)(mel_offset + 2*n_ctx, mel_inp.n_len);
 
             for (int j = 0; j < mel_inp.n_mel; ++j) {
                 for (int i = i0; i < i1; ++i) {
@@ -2469,7 +2469,7 @@ static bool whisper_decode_internal(
         }
 
         kv_self.n = whisper_kv_cache_cell_max(kv_self);
-        //kv_self.n = std::min((int32_t) hparams.n_text_ctx, std::max(32, whisper_kv_cache_cell_max(kv_self)));
+        //kv_self.n = std::min((int32_t) hparams.n_text_ctx, (std::max)(32, whisper_kv_cache_cell_max(kv_self)));
         //printf("n_tokens = %5d, kv_self.head = %5d, kv_self.n = %5d, seq_id = %5d\n", batch.n_tokens, kv_self.head, kv_self.n, batch.seq_id[0][0]);
     }
 
@@ -2703,11 +2703,11 @@ static void log_mel_spectrogram_worker_thread(int ith, const std::vector<float> 
     int i = ith;
 
     // calculate FFT only when fft_in are not all zero
-    for (; i < std::min(n_samples / frame_step + 1, mel.n_len); i += n_threads) {
+    for (; i < (std::min)(n_samples / frame_step + 1, mel.n_len); i += n_threads) {
         const int offset = i * frame_step;
 
         // apply Hanning window (~10% faster)
-        for (int j = 0; j < std::min(frame_size, n_samples - offset); j++) {
+        for (int j = 0; j < (std::min)(frame_size, n_samples - offset); j++) {
             fft_in[j] = hann[j] * samples[offset + j];
         }
         // fill the rest with zeros
@@ -2743,7 +2743,7 @@ static void log_mel_spectrogram_worker_thread(int ith, const std::vector<float> 
                 sum += fft_out[k] * filters.data[j * n_fft + k];
             }
 
-            sum = log10(std::max(sum, 1e-10));
+            sum = log10((std::max)(sum, 1e-10));
 
             mel.data[j * mel.n_len + i] = sum;
         }
@@ -3513,7 +3513,7 @@ int whisper_tokenize(struct whisper_context * ctx, const char * text, whisper_to
 int whisper_lang_max_id() {
     auto max_id = 0;
     for (const auto & kv : g_lang) {
-        max_id = std::max(max_id, kv.second.first);
+        max_id = (std::max)(max_id, kv.second.first);
     }
 
     return max_id;
@@ -3786,11 +3786,11 @@ void whisper_print_timings(struct whisper_context * ctx) {
     WHISPER_LOG_INFO("%s:     load time = %8.2f ms\n", __func__, ctx->t_load_us / 1000.0f);
     if (ctx->state != nullptr) {
 
-        const int32_t n_sample = std::max(1, ctx->state->n_sample);
-        const int32_t n_encode = std::max(1, ctx->state->n_encode);
-        const int32_t n_decode = std::max(1, ctx->state->n_decode);
-        const int32_t n_batchd = std::max(1, ctx->state->n_batchd);
-        const int32_t n_prompt = std::max(1, ctx->state->n_prompt);
+        const int32_t n_sample = (std::max)(1, ctx->state->n_sample);
+        const int32_t n_encode = (std::max)(1, ctx->state->n_encode);
+        const int32_t n_decode = (std::max)(1, ctx->state->n_decode);
+        const int32_t n_batchd = (std::max)(1, ctx->state->n_batchd);
+        const int32_t n_prompt = (std::max)(1, ctx->state->n_prompt);
 
         WHISPER_LOG_INFO("%s:     fallbacks = %3d p / %3d h\n", __func__, ctx->state->n_fail_p, ctx->state->n_fail_h);
         WHISPER_LOG_INFO("%s:      mel time = %8.2f ms\n", __func__, ctx->state->t_mel_us / 1000.0f);
@@ -4301,7 +4301,7 @@ struct whisper_full_params whisper_full_default_params(enum whisper_sampling_str
     struct whisper_full_params result = {
         /*.strategy          =*/ strategy,
 
-        /*.n_threads         =*/ std::min(4, (int32_t) std::thread::hardware_concurrency()),
+        /*.n_threads         =*/ (std::min)(4, (int32_t) std::thread::hardware_concurrency()),
         /*.n_max_text_ctx    =*/ 16384,
         /*.offset_ms         =*/ 0,
         /*.duration_ms       =*/ 0,
@@ -4943,7 +4943,7 @@ static void whisper_sequence_score(
         double entropy = 0.0f;
 
         std::map<whisper_token, int> token_counts;
-        for (int i = std::max(0, sequence.result_len - n); i < sequence.result_len; ++i) {
+        for (int i = (std::max)(0, sequence.result_len - n); i < sequence.result_len; ++i) {
             token_counts[sequence.tokens[i].id]++;
             cnt++;
         }
@@ -5043,11 +5043,11 @@ int whisper_full_with_state(
             } break;
         case WHISPER_SAMPLING_BEAM_SEARCH:
             {
-                n_decoders = std::max(params.greedy.best_of, params.beam_search.beam_size);
+                n_decoders = (std::max)(params.greedy.best_of, params.beam_search.beam_size);
             } break;
     };
 
-    n_decoders = std::max(1, n_decoders);
+    n_decoders = (std::max)(1, n_decoders);
 
     if (n_decoders > WHISPER_MAX_DECODERS) {
         WHISPER_LOG_ERROR("%s: too many decoders requested (%d), max = %d\n", __func__, n_decoders, WHISPER_MAX_DECODERS);
@@ -5205,7 +5205,7 @@ int whisper_full_with_state(
                     } break;
             };
 
-            n_decoders_cur = std::max(1, n_decoders_cur);
+            n_decoders_cur = (std::max)(1, n_decoders_cur);
 
             WHISPER_LOG_DEBUG("\n%s: strategy = %d, decoding with %d decoders, temperature = %.2f\n", __func__, params.strategy, n_decoders_cur, t_cur);
 
@@ -5241,7 +5241,7 @@ int whisper_full_with_state(
 
                 // if we have already generated some text, use it as a prompt to condition the next generation
                 if (!prompt_past.empty() && t_cur < 0.5f && params.n_max_text_ctx > 0) {
-                    int n_take = std::min(std::min(params.n_max_text_ctx, whisper_n_text_ctx(ctx)/2), int(prompt_past.size()));
+                    int n_take = (std::min)((std::min)(params.n_max_text_ctx, whisper_n_text_ctx(ctx)/2), int(prompt_past.size()));
 
                     prompt = { whisper_token_prev(ctx) };
                     prompt.insert(prompt.begin() + 1, prompt_past.end() - n_take, prompt_past.end());
@@ -5340,7 +5340,7 @@ int whisper_full_with_state(
                         }
                     };
 
-                    const int n_threads = std::min(params.n_threads, n_decoders_cur);
+                    const int n_threads = (std::min)(params.n_threads, n_decoders_cur);
 
                     if (n_threads == 1) {
                         process();
@@ -5590,7 +5590,7 @@ int whisper_full_with_state(
                             }
                         };
 
-                        const int n_threads = std::min(params.n_threads, n_decoders_cur);
+                        const int n_threads = (std::min)(params.n_threads, n_decoders_cur);
 
                         if (n_threads == 1) {
                             process();
@@ -5889,7 +5889,7 @@ int whisper_full_parallel(
 
             // make sure that segments are not overlapping
             if (!ctx->state->result_all.empty()) {
-                result.t0 = std::max(result.t0, ctx->state->result_all.back().t1);
+                result.t0 = (std::max)(result.t0, ctx->state->result_all.back().t1);
             }
 
             ctx->state->result_all.push_back(std::move(result));
@@ -6327,7 +6327,7 @@ WHISPER_API const char * whisper_bench_ggml_mul_mat_str(int n_threads) {
 //
 
 static int timestamp_to_sample(int64_t t, int n_samples) {
-    return std::max(0, std::min((int) n_samples - 1, (int) ((t*WHISPER_SAMPLE_RATE)/100)));
+    return (std::max)(0, (std::min)((int) n_samples - 1, (int) ((t*WHISPER_SAMPLE_RATE)/100)));
 }
 
 static int64_t sample_to_timestamp(int i_sample) {
@@ -6510,7 +6510,7 @@ static void whisper_exp_compute_token_level_timestamps(
         if (j > 0) {
             if (tokens[j - 1].t1 > tokens[j].t0) {
                 tokens[j].t0 = tokens[j - 1].t1;
-                tokens[j].t1 = std::max(tokens[j].t0, tokens[j].t1);
+                tokens[j].t1 = (std::max)(tokens[j].t0, tokens[j].t1);
             }
         }
     }
@@ -6528,8 +6528,8 @@ static void whisper_exp_compute_token_level_timestamps(
             int s0 = timestamp_to_sample(tokens[j].t0, n_samples);
             int s1 = timestamp_to_sample(tokens[j].t1, n_samples);
 
-            const int ss0 = std::max(s0 - hw, 0);
-            const int ss1 = std::min(s1 + hw, n_samples);
+            const int ss0 = (std::max)(s0 - hw, 0);
+            const int ss1 = (std::min)(s1 + hw, n_samples);
 
             const int ns = ss1 - ss0;
 
@@ -6591,7 +6591,7 @@ static void whisper_exp_compute_token_level_timestamps(
 
     //    for (int j = 0; j < n; j++) {
     //        if (j > 0) {
-    //            tokens[j].t0 = std::max(0, (int) (tokens[j].t0 - t_expand));
+    //            tokens[j].t0 = (std::max)(0, (int) (tokens[j].t0 - t_expand));
     //        }
     //        if (j < n - 1) {
     //            tokens[j].t1 = tokens[j].t1 + t_expand;
