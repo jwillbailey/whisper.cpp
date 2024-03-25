@@ -536,39 +536,39 @@ struct whisper_hparams {
 };
 
 // audio encoding layer
-struct whisper_layer_encoder {
-    // encoder.blocks.*.attn_ln
-    struct ggml_tensor * attn_ln_0_w;
-    struct ggml_tensor * attn_ln_0_b;
-
-    // encoder.blocks.*.attn.out
-    struct ggml_tensor * attn_ln_1_w;
-    struct ggml_tensor * attn_ln_1_b;
-
-    // encoder.blocks.*.attn.query
-    struct ggml_tensor * attn_q_w;
-    struct ggml_tensor * attn_q_b;
-
-    // encoder.blocks.*.attn.key
-    struct ggml_tensor * attn_k_w;
-
-    // encoder.blocks.*.attn.value
-    struct ggml_tensor * attn_v_w;
-    struct ggml_tensor * attn_v_b;
-
-    // encoder.blocks.*.mlp_ln
-    struct ggml_tensor * mlp_ln_w;
-    struct ggml_tensor * mlp_ln_b;
-
-    // encoder.blocks.*.mlp.0
-    struct ggml_tensor * mlp_0_w;
-    struct ggml_tensor * mlp_0_b;
-
-    // encoder.blocks.*.mlp.2
-    struct ggml_tensor * mlp_1_w;
-    struct ggml_tensor * mlp_1_b;
-};
-
+//struct whisper_layer_encoder {
+//    // encoder.blocks.*.attn_ln
+//    struct ggml_tensor * attn_ln_0_w;
+//    struct ggml_tensor * attn_ln_0_b;
+//
+//    // encoder.blocks.*.attn.out
+//    struct ggml_tensor * attn_ln_1_w;
+//    struct ggml_tensor * attn_ln_1_b;
+//
+//    // encoder.blocks.*.attn.query
+//    struct ggml_tensor * attn_q_w;
+//    struct ggml_tensor * attn_q_b;
+//
+//    // encoder.blocks.*.attn.key
+//    struct ggml_tensor * attn_k_w;
+//
+//    // encoder.blocks.*.attn.value
+//    struct ggml_tensor * attn_v_w;
+//    struct ggml_tensor * attn_v_b;
+//
+//    // encoder.blocks.*.mlp_ln
+//    struct ggml_tensor * mlp_ln_w;
+//    struct ggml_tensor * mlp_ln_b;
+//
+//    // encoder.blocks.*.mlp.0
+//    struct ggml_tensor * mlp_0_w;
+//    struct ggml_tensor * mlp_0_b;
+//
+//    // encoder.blocks.*.mlp.2
+//    struct ggml_tensor * mlp_1_w;
+//    struct ggml_tensor * mlp_1_b;
+//};
+//
 // token decoding layer
 struct whisper_layer_decoder {
     // decoder.blocks.*.attn_ln
@@ -6022,6 +6022,15 @@ float whisper_full_get_token_p(struct whisper_context * ctx, int i_segment, int 
     return ctx->state->result_all[i_segment].tokens[i_token].p;
 }
 
+// Feature extraction: Added by jwillbailey (Will Bailey) Salford University 2024
+std::vector<whisper_layer_encoder> & whisper_extract_encoder(struct whisper_context* ctx) {
+   
+    whisper_model * mod = &(ctx->model);
+    return mod->layers_encoder;
+}
+
+
+
 // =================================================================================================
 
 //
@@ -6633,8 +6642,4 @@ static void whisper_log_callback_default(ggml_log_level level, const char * text
     fflush(stderr);
 }
 
-// Feature extraction
 
-std::vector<whisper_layer_encoder> & whisper_extract_encoder(struct whisper_context * ctx) {
-    return &(ctx->model->layers_decoder);
-}

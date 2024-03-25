@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <vector>
 
 #ifdef __GNUC__
 #    define WHISPER_DEPRECATED(func, hint) func __attribute__((deprecated(hint)))
@@ -79,10 +80,42 @@ extern "C" {
     struct whisper_context;
     struct whisper_state;
     struct whisper_full_params;
-
     typedef int32_t whisper_pos;
     typedef int32_t whisper_token;
     typedef int32_t whisper_seq_id;
+
+    struct whisper_layer_encoder {
+        // encoder.blocks.*.attn_ln
+        struct ggml_tensor* attn_ln_0_w;
+        struct ggml_tensor* attn_ln_0_b;
+
+        // encoder.blocks.*.attn.out
+        struct ggml_tensor* attn_ln_1_w;
+        struct ggml_tensor* attn_ln_1_b;
+
+        // encoder.blocks.*.attn.query
+        struct ggml_tensor* attn_q_w;
+        struct ggml_tensor* attn_q_b;
+
+        // encoder.blocks.*.attn.key
+        struct ggml_tensor* attn_k_w;
+
+        // encoder.blocks.*.attn.value
+        struct ggml_tensor* attn_v_w;
+        struct ggml_tensor* attn_v_b;
+
+        // encoder.blocks.*.mlp_ln
+        struct ggml_tensor* mlp_ln_w;
+        struct ggml_tensor* mlp_ln_b;
+
+        // encoder.blocks.*.mlp.0
+        struct ggml_tensor* mlp_0_w;
+        struct ggml_tensor* mlp_0_b;
+
+        // encoder.blocks.*.mlp.2
+        struct ggml_tensor* mlp_1_w;
+        struct ggml_tensor* mlp_1_b;
+    };
 
     struct whisper_context_params {
         bool  use_gpu;
@@ -600,6 +633,8 @@ extern "C" {
     // Get the probability of the specified token in the specified segment
     WHISPER_API float whisper_full_get_token_p           (struct whisper_context * ctx, int i_segment, int i_token);
     WHISPER_API float whisper_full_get_token_p_from_state(struct whisper_state * state, int i_segment, int i_token);
+
+    WHISPER_API std::vector<whisper_layer_encoder>& whisper_extract_encoder(struct whisper_context* ctx);
 
     ////////////////////////////////////////////////////////////////////////////
 
